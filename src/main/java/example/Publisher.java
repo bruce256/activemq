@@ -29,7 +29,7 @@ class Publisher {
         int port = 5672; //Integer.parseInt(env("ACTIVEMQ_PORT", "5672"));
         String destination = "topic://event";//arg(args, 0, "topic://event");
 
-        int messages = 10000;
+        int messages = 100000;
         int size = 256;
 
         String DATA = "abcdefghijklmnopqrstuvwxyz";
@@ -50,21 +50,23 @@ class Publisher {
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         MessageProducer producer = session.createProducer(dest);
-        producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
 
         for( int i=1; i <= messages; i ++) {
             TextMessage msg = session.createTextMessage("#:"+i);
             msg.setIntProperty("id", i);
             producer.send(msg);
+            Thread.sleep(1000);
             if( (i % 1000) == 0) {
                 System.out.println(String.format("Sent %d messages", i));
             }
         }
-
+    
         producer.send(session.createTextMessage("SHUTDOWN"));
         Thread.sleep(1000*3);
+        producer.close();
+        session.close();
         connection.close();
-        System.exit(0);
     }
 
     private static String env(String key, String defaultValue) {

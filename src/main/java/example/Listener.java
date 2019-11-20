@@ -26,6 +26,7 @@ class Listener {
         String user = "admin"; //env("ACTIVEMQ_USER", "admin");
         String password = "activemq";//env("ACTIVEMQ_PASSWORD", "password");
         String host = "localhost";//env("ACTIVEMQ_HOST", "localhost");
+        // amq协议的端口号
         int port = 5672; //Integer.parseInt(env("ACTIVEMQ_PORT", "5672"));
         String destination = "topic://event";//arg(args, 0, "topic://event");
 
@@ -36,17 +37,14 @@ class Listener {
 //        String destination = arg(args, 0, "topic://event");
 
         ConnectionFactoryImpl factory = new ConnectionFactoryImpl(host, port, user, password);
-        Destination dest = null;
-        if( destination.startsWith("topic://") ) {
-            dest = new TopicImpl(destination);
-        } else {
-            dest = new QueueImpl(destination);
-        }
+        Topic    dest = new TopicImpl(destination);
+        
 
         Connection connection = factory.createConnection(user, password);
+        connection.setClientID("lvshengnb");
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        MessageConsumer consumer = session.createConsumer(dest);
+        MessageConsumer consumer = session.createDurableSubscriber(dest, "lvsheng");
         long start = System.currentTimeMillis();
         long count = 1;
         System.out.println("Waiting for messages...");
@@ -68,9 +66,10 @@ class Listener {
                     }
                     if( count == 1 ) {
                         start = System.currentTimeMillis();
-                    } else if( count % 1000 == 0 ) {
-                        System.out.println(String.format("Received %d messages.", count));
                     }
+                    
+                    System.out.println(String.format("Received %d messages.", count));
+                    
                     count ++;
                 }
 
